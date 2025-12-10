@@ -1,63 +1,60 @@
 from flask import Flask, render_template, request
 import pandas as pd
 import joblib
-
-# Load Model
-pipeline = joblib.load("model.pkl")
+import os
 
 app = Flask(__name__)
 
+# -----------------------------
+# Load your trained pipeline
+# -----------------------------
+MODEL_PATH = "model.pkl"
+
+try:
+    model = joblib.load(MODEL_PATH)
+    print("Model loaded successfully!")
+except:
+    print("ERROR: model.pkl not found!")
+
+
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return render_template("upload.html")
+
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    # Collect form data
-    data = {
-        'hotel': request.form['hotel'],
-        'lead_time': float(request.form['lead_time']),
-        'arrival_date_year': int(request.form['arrival_date_year']),
-        'arrival_date_month': request.form['arrival_date_month'],
-        'arrival_date_week_number': int(request.form['arrival_date_week_number']),
-        'arrival_date_day_of_month': int(request.form['arrival_date_day_of_month']),
-        'stays_in_weekend_nights': int(request.form['stays_in_weekend_nights']),
-        'stays_in_week_nights': int(request.form['stays_in_week_nights']),
-        'total_nights': int(request.form['stays_in_weekend_nights']) + int(request.form['stays_in_week_nights']),
-        'adults': int(request.form['adults']),
-        'children': int(request.form['children']),
-        'babies': int(request.form['babies']),
-        'meal': request.form['meal'],
-        'country': request.form['country'],
-        'market_segment': request.form['market_segment'],
-        'distribution_channel': request.form['distribution_channel'],
-        'is_repeated_guest': int(request.form['is_repeated_guest']),
-        'previous_cancellations': int(request.form['previous_cancellations']),
-        'previous_bookings_not_canceled': int(request.form['previous_bookings_not_canceled']),
-        'reserved_room_type': request.form['reserved_room_type'],
-        'assigned_room_type': request.form['assigned_room_type'],
-        'booking_changes': int(request.form['booking_changes']),
-        'deposit_type': request.form['deposit_type'],
-        'agent': float(request.form['agent']),
-        'company': request.form['company'],
-        'days_in_waiting_list': int(request.form['days_in_waiting_list']),
-        'customer_type': request.form['customer_type'],
-        'adr': float(request.form['adr']),
-        'required_car_parking_spaces': int(request.form['required_car_parking_spaces']),
-        'total_of_special_requests': int(request.form['total_of_special_requests']),
-    }
+    if "file" not in request.files:
+        return "⚠ No file uploaded!"
 
-    df = pd.DataFrame([data])
+    file = request.files["file"]
 
-    # Predict
-    prediction = pipeline.predict(df)[0]
-    proba = pipeline.predict_proba(df)[0][1]  # cancellation probability
+    if file.filename == "":
+        return "⚠ Please select a CSV file!"
 
-    return render_template(
-        "index.html",
-        prediction=int(prediction),
-        probability=round(float(proba), 3)
-    )
+    # Read uploaded CSV
+    try:
+        df = pd.read_csv(file)
+    except Exception as e:
+        return f"⚠ Error reading CSV file: {e}"
+
+    # -----------------------------
+    # Perform predictions
+    # -----------------------------
+    try:
+        predictions = model.predict(df)
+        probabilities = model.predict_proba(df)
+
+        df["Prediction"] = predictions
+        df["Cancel_Probability"] = probabilities[:, 1]
+    except Exception as e:
+        return f"❌ Model prediction failed: {e}"
+
+    # Convert to HTML table
+    table_html = df.to_html(classes="table table-striped table-bordered", index=False)
+
+    return render_template("results.html", table_html=table_html)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
