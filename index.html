@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hotel Cancellation Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 30px;
+        }
+        .container {
+            width: 600px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #28a745;
+            padding: 10px;
+            color: white;
+            font-size: 18px;
+            border: none;
+            width: 100%;
+            border-radius: 5px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #eee;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🏨 Hotel Booking Cancellation Predictor</h2>
+    <form action="/predict" method="post">
+
+        <label>Hotel</label>
+        <select name="hotel">
+            <option>City Hotel</option>
+            <option>Resort Hotel</option>
+        </select>
+
+        <label>Lead time</label>
+        <input type="number" name="lead_time" required>
+
+        <label>Arrival Month</label>
+        <select name="arrival_date_month">
+            <option>January</option>
+            <option>February</option>
+            <option>March</option>
+            <option>April</option>
+            <option>May</option>
+            <option>June</option>
+            <option>July</option>
+            <option>August</option>
+            <option>September</option>
+            <option>October</option>
+            <option>November</option>
+            <option>December</option>
+        </select>
+
+        <label>Weekend nights</label>
+        <input type="number" name="stays_in_weekend_nights">
+
+        <label>Week nights</label>
+        <input type="number" name="stays_in_week_nights">
+
+        <label>Adults</label>
+        <input type="number" name="adults">
+
+        <label>Children</label>
+        <input type="number" name="children">
+
+        <label>ADR</label>
+        <input type="number" name="adr" step="0.01">
+
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if prediction is not none %}
+    <div class="result">
+        <h3>Prediction:  
+            {% if prediction == 1 %}
+                ❌ Likely to Cancel
+            {% else %}
+                ✅ Likely to Show Up
+            {% endif %}
+        </h3>
+
+        <p>Cancellation Probability: <b>{{ probability }}</b></p>
+    </div>
+    {% endif %}
+</div>
+</body>
+</html>
