@@ -1,9 +1,0 @@
-numpy
-pandas
-scikit-learn==1.3.2
-tensorflow
-scikeras
-streamlit
-joblib
-matplotlib
-seaborn
