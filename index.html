@@ -863,3 +863,24 @@
     </script>
 </body>
 </html>
+<h3>Model Training</h3>
+<button onclick="trainModel()">Train Model</button>
+<p id="trainStatus"></p>
+
+<script>
+function trainModel() {
+  document.getElementById("trainStatus").innerText = "Training in progress...";
+
+  fetch("/train", { method: "POST" })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("trainStatus").innerText =
+        "✅ " + data.message + " | Accuracy: " + data.accuracy;
+    })
+    .catch(() => {
+      document.getElementById("trainStatus").innerText =
+        "❌ Training failed";
+    });
+}
+</script>
+
