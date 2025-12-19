@@ -61,3 +61,57 @@ demo = gr.Interface(
 )
 
 demo.launch()
+from flask import Flask, jsonify
+import pandas as pd
+import pickle
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+app = Flask(__name__)
+
+@app.route("/train", methods=["POST"])
+def train_model():
+    # 1. Load data
+    df = pd.read_csv("hotel_bookings.csv")
+
+    # 2. Select features
+    features = [
+        "lead_time",
+        "adr",
+        "special_requests",
+        "previous_cancellations",
+        "booking_changes"
+    ]
+
+    df = df.dropna(subset=features + ["is_canceled"])
+
+    X = df[features]
+    y = df["is_canceled"]
+
+    # 3. Train-test split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    # 4. Train MLP
+    model = MLPClassifier(
+        hidden_layer_sizes=(64, 32),
+        max_iter=200,
+        random_state=42
+    )
+
+    model.fit(X_train, y_train)
+
+    # 5. Evaluate
+    accuracy = accuracy_score(y_test, model.predict(X_test))
+
+    # 6. Save model
+    with open("model.pkl", "wb") as f:
+        pickle.dump(model, f)
+
+    return jsonify({
+        "message": "Training completed successfully",
+        "accuracy": round(accuracy, 2)
+    })
+
