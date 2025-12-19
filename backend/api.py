@@ -1,53 +1,43 @@
 import gradio as gr
-import joblib
+import pickle
 import numpy as np
 
-# Load your trained model
-try:
-    model_data = joblib.load('model.pkl')
-    model = model_data['model']
-    scaler = model_data['scaler']
-    print("Model loaded successfully for Gradio!")
-except:
-    print("ERROR: model.pkl not found!")
-    model = None
-    scaler = None
+# Load YOUR model
+with open('model.pkl', 'rb') as f:
+    model = pickle.load(f)
 
 def predict(lead_time, adr, special_requests, market_segment,
             deposit_type, previous_cancellations, booking_changes,
             parking_spaces, arrival_month):
     
-    if model is None:
-        return "0%", "ERROR", "Model not loaded"
-    
-    # Prepare features
     features = [[lead_time, adr, special_requests, market_segment,
                 deposit_type, previous_cancellations, booking_changes,
                 parking_spaces, arrival_month]]
     
-    # Scale features
-    features_scaled = scaler.transform(features)
-    
-    # Get probability
+    # Try to get probability
     try:
-        prob = model.predict_proba(features_scaled)[0][1]
+        if hasattr(model, 'predict_proba'):
+            prob = model.predict_proba(features)[0][1]
+        else:
+            pred = model.predict(features)[0]
+            prob = float(pred)
     except:
         prob = 0.5
     
     # Risk calculation
     if prob < 0.3:
         risk = "LOW 🟢"
-        action = "Standard confirmation process"
+        action = "Standard confirmation"
     elif prob < 0.7:
         risk = "MEDIUM 🟡"
         action = "Send reminder email"
     else:
         risk = "HIGH 🔴"
-        action = "Contact customer directly"
+        action = "Contact customer"
     
     return f"{prob:.1%}", risk, action
 
-# Create interface
+# Create simple interface
 demo = gr.Interface(
     fn=predict,
     inputs=[
@@ -67,8 +57,7 @@ demo = gr.Interface(
         gr.Textbox(label="Recommended Action")
     ],
     title="🏨 Hotel Booking Cancellation Predictor",
-    description="MLP Neural Network trained on hotel booking data"
+    description="Using your trained scikit-learn model"
 )
 
-if __name__ == "__main__":
-    demo.launch()
+demo.launch()
